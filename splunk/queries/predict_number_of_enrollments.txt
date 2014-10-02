@@ -1,0 +1,2 @@
+index=* edx.course.enrollment.activated earliest="09/13/2014:00:00:00" latest="09/30/2014:00:00:00"
+ | timechart span=1h count(linecount) as distinct_count | predict distinct_count

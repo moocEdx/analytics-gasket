@@ -1,0 +1,1 @@
+|metadata type=hosts earliest=-1d index=* "peer_assess" NOT ("problem_reset_attempts" OR "problem_rescore") | eval since=now()-lastTime | search since>14400 |join host [|metadata type=hosts earliest=-1d index=*| eval since=now()-lastTime | search since<14300 ] | chart count by host
