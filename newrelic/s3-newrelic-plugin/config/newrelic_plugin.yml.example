@@ -30,3 +30,4 @@ agents:
     s3_secret_access_key: bar
     s3_bucket_name: one_bucket
     s3_region: "us-foo-1"
+    s3_cmd_config_file: "config/foofile"

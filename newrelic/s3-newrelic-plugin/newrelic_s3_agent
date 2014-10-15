@@ -1,0 +1,66 @@
+#! /usr/bin/env ruby
+
+# An agent that collects metrics
+# From S3 metadata
+#
+# The agent assumes there is one s3 bucket to measure
+
+
+# Requires ruby >= 1.9
+# Requires s3cmd (s3tools.org)
+
+require "rubygems"
+require "bundler/setup"
+require "newrelic_plugin"
+require "aws-sdk"
+
+module S3NewRelicAgent
+
+    class Agent < NewRelic::Plugin::Agent::Base
+
+        agent_guid "org.edx.s3watcher"
+        agent_version "0.0.1"
+        agent_config_options :s3_access_key_id, :s3_secret_access_key, :s3_bucket_name, :s3_region, :s3_cmd_config_file
+        agent_human_labels("S3 Agent") { "S3_monitor" }
+
+        def setup_metrics
+            AWS.config(access_key_id: s3_access_key_id, secret_access_key: s3_secret_access_key, region: s3_region)
+
+            # Creating config file for use by s3cmd. This can be condensed into using specific params on later
+            # versions of s3cmd.
+            unless File.exists? s3_cmd_config_file
+                File.open("config/s3cmdconfig", "w") { |file|
+                    file << "[default] \n"
+                    file << "access_key = #{s3_access_key_id}\n"
+                    file << "secret_key = #{s3_secret_access_key}"
+                }
+            end
+
+            @aws_s3 = AWS::S3.new
+        end
+
+        def get_s3_bucket_object_count
+            # Uses aws-sdk to obtain total number of objects in bucket
+            bucket = @aws_s3.buckets[s3_bucket_name]
+            return bucket.objects.count
+        end
+
+        def get_s3_bucket_size
+            # Uses s3cmd utility to gather total bucket size. This utility
+            # gets total size information faster than the sdk.
+            return `s3cmd du s3://#{s3_bucket_name} -c #{s3_cmd_config_file}`.to_i
+        end
+
+        def poll_cycle
+            # Implementation of base plugin class.
+            report_metric "Number of bucket objects", "Objects", get_s3_bucket_object_count
+            report_metric "Total bytes", "Bytes", get_s3_bucket_size
+        end
+
+    end
+
+    NewRelic::Plugin::Setup.install_agent :s3, S3NewRelicAgent
+
+    NewRelic::Plugin::Run.setup_and_run
+
+end
