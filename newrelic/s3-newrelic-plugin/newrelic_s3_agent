@@ -29,7 +29,7 @@ module S3NewRelicAgent
             # Creating config file for use by s3cmd. This can be condensed into using specific params on later
             # versions of s3cmd.
             unless File.exists? s3_cmd_config_file
-                File.open("config/s3cmdconfig", "w") { |file|
+                File.open(s3_cmd_config_file, "w") { |file|
                     file << "[default] \n"
                     file << "access_key = #{s3_access_key_id}\n"
                     file << "secret_key = #{s3_secret_access_key}"
